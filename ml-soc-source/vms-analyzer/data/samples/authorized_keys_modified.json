@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T23:05:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "554",
+  "rule_level": 10,
+  "rule_description": "File authorized_keys modified - new SSH key added",
+  "mitre_id": ["T1098"],
+  "srcip": "",
+  "srcuser": "",
+  "full_log": "File /home/dev/.ssh/authorized_keys changed. ssh-rsa AAAA... attacker@test appended.",
+  "location": "syscheck"
+}

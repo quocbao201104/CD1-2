@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-07-22T20:47:27.836+0700",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "",
+  "rule_level": 0,
+  "rule_description": "Archived benign json",
+  "mitre_id": [],
+  "srcip": "192.168.245.1",
+  "srcuser": "",
+  "full_log": "{\"timestamp\":\"2026-07-22T20:47:25.922978+0700\",\"flow_id\":439120844151621,\"in_iface\":\"ens33\",\"event_type\":\"http\",\"src_ip\":\"192.168.245.1\",\"src_port\":49917,\"dest_ip\":\"192.168.245.10\",\"dest_port\":80,\"proto\":\"TCP\",\"tx_id\":0,\"http\":{\"hostname\":\"172.20.10.3\",\"http_port\":8081,\"url\":\"/\",\"http_user_agent\":\"ml-baseline-benign/1.0\",\"http_content_type\":\"text/html\",\"http_method\":\"GET\",\"protocol\":\"HTTP/1.1\",\"status\":200,\"length\":228}}",
+  "location": "/var/log/suricata/eve.json"
+}

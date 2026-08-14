@@ -1,0 +1,27 @@
+# Local documents, reports, and generated media
+*.docx
+*.pptx
+*.xlsx
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.zip
+*.tar.gz
+~$*
+
+# Local review/build/temp artifacts
+_*/
+.tmp-*/
+*.log
+
+# Secrets and machine-specific runtime files
+.env
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+wazuh-passwords.txt
+
+# Lab handoff files that may contain local credentials
+ml-soc-source/HUONG_DAN_BAN_GIAO_SU_DUNG_LAB.md

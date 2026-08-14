@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-07-22T20:47:27.862+0700",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "5501",
+  "rule_level": 3,
+  "rule_description": "PAM: Login session opened.",
+  "mitre_id": [
+    "T1078"
+  ],
+  "srcip": "",
+  "srcuser": "",
+  "full_log": "Jul 22 20:47:27 vms-production sshd[4137]: pam_unix(sshd:session): session opened for user ubuntu(uid=1000) by (uid=0)",
+  "location": "/var/log/auth.log"
+}

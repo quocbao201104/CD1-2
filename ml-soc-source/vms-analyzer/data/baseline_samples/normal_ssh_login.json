@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T10:00:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "5715",
+  "rule_level": 3,
+  "rule_description": "SSH login accepted from admin workstation",
+  "mitre_id": [],
+  "srcip": "203.0.113.10",
+  "srcuser": "admin",
+  "full_log": "Accepted publickey for admin from 203.0.113.10 port 53100 ssh2",
+  "location": "/var/log/auth.log"
+}

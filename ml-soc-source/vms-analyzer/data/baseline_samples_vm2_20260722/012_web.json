@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-07-22T20:47:27.870+0700",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "",
+  "rule_level": 0,
+  "rule_description": "Archived benign web-accesslog",
+  "mitre_id": [],
+  "srcip": "192.168.245.1",
+  "srcuser": "",
+  "full_log": "192.168.245.1 - - [22/Jul/2026:20:47:26 +0700] \"GET /robots.txt HTTP/1.1\" 404 162 \"-\" \"ml-baseline-benign/1.0\"",
+  "location": "/var/log/nginx/access.log"
+}

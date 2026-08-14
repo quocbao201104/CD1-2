@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T22:36:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "100202",
+  "rule_level": 12,
+  "rule_description": "SOC: Web root file modified",
+  "mitre_id": ["T1491"],
+  "srcip": "",
+  "srcuser": "www-data",
+  "full_log": "File '/var/www/html/index.html' modified",
+  "location": "syscheck"
+}

@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T22:35:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "100101",
+  "rule_level": 12,
+  "rule_description": "Login SSH thanh cong sau brute force (valid login after brute force)",
+  "mitre_id": ["T1078"],
+  "srcip": "45.13.10.10",
+  "srcuser": "admin",
+  "full_log": "Accepted password for admin from 45.13.10.10 port 53999 ssh2",
+  "location": "/var/log/auth.log"
+}

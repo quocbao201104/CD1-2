@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# /var/ossec/integrations/custom-ai-soc  (chmod 750, chown root:wazuh)
+# CD2: Forward alert SOC sang VM3 theo schema phang.
+import sys, json
+try:
+    import requests
+    _HAS_REQ = True
+except Exception:
+    import urllib.request
+    _HAS_REQ = False
+
+alert_file = sys.argv[1]
+hook_url = sys.argv[3]
+with open(alert_file) as f:
+    alert = json.load(f)
+data = alert.get("data", {})
+rule = alert.get("rule", {})
+agent = alert.get("agent", {})
+payload = {
+    "timestamp": alert.get("timestamp", ""),
+    "agent_name": agent.get("name", ""),
+    "agent_ip": agent.get("ip", ""),
+    "rule_id": str(rule.get("id", "")),
+    "rule_level": rule.get("level", 0),
+    "rule_description": rule.get("description", ""),
+    "mitre_id": rule.get("mitre", {}).get("id", []),
+    "srcip": data.get("srcip", ""),
+    "srcuser": data.get("srcuser", ""),
+    "full_log": alert.get("full_log", ""),
+    "location": alert.get("location", ""),
+}
+body = json.dumps(payload).encode()
+try:
+    if _HAS_REQ:
+        requests.post(hook_url, json=payload, timeout=5)
+    else:
+        req = urllib.request.Request(hook_url, data=body,
+                                     headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=5)
+except Exception as e:
+    sys.stderr.write(str(e))

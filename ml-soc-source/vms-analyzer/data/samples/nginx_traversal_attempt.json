@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T22:33:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "100201",
+  "rule_level": 10,
+  "rule_description": "WEB: Directory traversal attempt on Nginx",
+  "mitre_id": ["T1190"],
+  "srcip": "192.168.245.40",
+  "srcuser": "",
+  "full_log": "192.168.245.40 - - [24/May/2026:22:33:00 +0700] \"GET /../../etc/passwd HTTP/1.1\" 400 166 \"-\" \"curl/8.0\"",
+  "location": "/var/log/nginx/access.log"
+}

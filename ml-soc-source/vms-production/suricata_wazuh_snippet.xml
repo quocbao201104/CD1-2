@@ -1,0 +1,6 @@
+<!-- CD1/CD2: them khoi nay vao BEN TRONG <ossec_config> cua /var/ossec/etc/ossec.conf tren VM1.
+     Muc dich: Wazuh Agent doc alert Suricata dang JSON tu eve.json va gui ve VM2. -->
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/suricata/eve.json</location>
+</localfile>

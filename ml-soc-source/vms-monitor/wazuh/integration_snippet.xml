@@ -1,0 +1,8 @@
+<!-- CD2: Them vao /var/ossec/etc/ossec.conf (khoi <ossec_config>). Doi IP_VM3. -->
+<integration>
+  <name>custom-ai-soc</name>
+  <hook_url>http://IP_VM3:8000/analyze-alert</hook_url>
+  <!-- Muc 8 de chuyen ca web probing (100200) va sudo/audit (100105) sang VM3. -->
+  <level>8</level>
+  <alert_format>json</alert_format>
+</integration>

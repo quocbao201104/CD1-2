@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-07-22T20:47:29.837+0700",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "5502",
+  "rule_level": 3,
+  "rule_description": "PAM: Login session closed.",
+  "mitre_id": [],
+  "srcip": "",
+  "srcuser": "",
+  "full_log": "Jul 22 20:47:28 vms-production sshd[4137]: pam_unix(sshd:session): session closed for user ubuntu",
+  "location": "/var/log/auth.log"
+}

@@ -1,0 +1,11 @@
+<!-- CD1/CD2: them cac khoi nay vao BEN TRONG <ossec_config> cua /var/ossec/etc/ossec.conf tren VM1.
+     Muc dich: Wazuh Agent doc access/error log cua Nginx de phat hien web probing. -->
+<localfile>
+  <log_format>apache</log_format>
+  <location>/var/log/nginx/access.log</location>
+</localfile>
+
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/var/log/nginx/error.log</location>
+</localfile>

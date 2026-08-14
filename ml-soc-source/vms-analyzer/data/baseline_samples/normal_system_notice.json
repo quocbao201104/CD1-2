@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T10:05:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "1000",
+  "rule_level": 2,
+  "rule_description": "System service status notice",
+  "mitre_id": [],
+  "srcip": "",
+  "srcuser": "",
+  "full_log": "systemd: Started nginx.service",
+  "location": "/var/log/syslog"
+}

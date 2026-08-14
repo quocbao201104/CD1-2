@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-07-22T20:47:27.860+0700",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "5715",
+  "rule_level": 3,
+  "rule_description": "sshd: authentication success.",
+  "mitre_id": [
+    "T1078",
+    "T1021"
+  ],
+  "srcip": "192.168.245.1",
+  "srcuser": "",
+  "full_log": "Jul 22 20:47:27 vms-production sshd[4137]: Accepted password for ubuntu from 192.168.245.1 port 49920 ssh2",
+  "location": "/var/log/auth.log"
+}

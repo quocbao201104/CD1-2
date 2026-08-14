@@ -1,0 +1,10 @@
+<!-- CD1: them cac dong nay vao BEN TRONG khoi <syscheck> cua /var/ossec/etc/ossec.conf tren VM1.
+     Khong dan them cap <syscheck>...</syscheck> moi neu file da co san khoi nay. -->
+<disabled>no</disabled>
+<directories check_all="yes" realtime="yes" whodata="yes">/etc/passwd,/etc/shadow,/etc/sudoers</directories>
+<directories check_all="yes" realtime="yes" whodata="yes">/root/.ssh</directories>
+<directories check_all="yes" realtime="yes" whodata="yes">/etc/nginx</directories>
+<directories check_all="yes" realtime="yes" whodata="yes">/var/www/html</directories>
+<directories check_all="yes" realtime="yes" whodata="yes">/home</directories>
+<frequency>300</frequency>
+<alert_new_files>yes</alert_new_files>

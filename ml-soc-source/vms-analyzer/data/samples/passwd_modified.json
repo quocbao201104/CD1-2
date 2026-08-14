@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T22:40:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "550",
+  "rule_level": 7,
+  "rule_description": "Integrity checksum changed: /etc/passwd modified",
+  "mitre_id": ["T1136"],
+  "srcip": "",
+  "srcuser": "",
+  "full_log": "File /etc/passwd checksum changed. New user line detected.",
+  "location": "syscheck"
+}

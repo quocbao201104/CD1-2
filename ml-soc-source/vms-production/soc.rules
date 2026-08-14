@@ -1,0 +1,8 @@
+# /etc/audit/rules.d/soc.rules - audit cho SOC
+-w /etc/passwd  -p wa -k identity
+-w /etc/shadow  -p wa -k identity
+-w /etc/sudoers -p wa -k priv
+-w /root/.ssh/authorized_keys -p wa -k sshkey
+-w /etc/nginx -p wa -k nginx_config
+-w /var/www/html -p wa -k webroot
+-a always,exit -F arch=b64 -S execve -F euid=0 -k root_cmd

@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-05-24T23:15:00+07:00",
+  "agent_name": "vms-production",
+  "agent_ip": "192.168.245.10",
+  "rule_id": "5402",
+  "rule_level": 5,
+  "rule_description": "Successful sudo to ROOT executed - sudoers usage",
+  "mitre_id": ["T1548"],
+  "srcip": "",
+  "srcuser": "dev",
+  "full_log": "dev : TTY=pts/0 ; PWD=/home/dev ; USER=root ; COMMAND=/bin/cat /etc/shadow",
+  "location": "/var/log/auth.log"
+}
