@@ -2,7 +2,8 @@
 Chay: python3 test_offline.py
   1. Security pipeline -> incident_type dung cho SSH, network, web, FIM/auditd
   2. Web/Nginx pipeline -> sensitive path va traversal attempt
-  3. Correlation: network + web + host cung server <10' -> Possible Server Compromise
+  3. Correlation: Web + host -> Suspected Web Compromise; Network + Web + host
+     with matching IP -> Possible Server Compromise
   4. Local ML -> anomaly_score/risk_delta tu baseline cuc bo
 """
 import json
@@ -12,7 +13,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.classifier import classify
-from app.scoring import score_envelope, severity_of
+from app.scoring import mitre_for_result, score_envelope, severity_of
 from app.normalizer import from_soc_flat
 from app.correlation import correlate, remember, reset
 from app.explainer import ai_explain
@@ -36,10 +37,15 @@ def check(cond, label):
 def run_soc(payload):
     ev = from_soc_flat(payload)
     incident = classify(ev["description"], ev["raw"].get("full_log", ""))
-    corr = correlate(ev["source"], ev["server"])
+    corr = correlate(
+        ev["source"],
+        ev["server"],
+        current_ip=ev.get("related_ip"),
+        current_incident=incident,
+    )
     remember(ev["source"], ev["server"], incident, ev.get("related_ip"))
     if corr:
-        incident = "Possible Server Compromise"
+        incident = corr["incident_type"]
     s = score_envelope(ev, incident, corr, WL)
     return incident, s, severity_of(s)
 
@@ -83,24 +89,61 @@ network_inc = classify(network_ev["description"], network_ev["raw"].get("full_lo
 remember(network_ev["source"], network_ev["server"], network_inc, network_ev.get("related_ip"))
 web_ev = from_soc_flat(json.load(open("data/samples/nginx_traversal_attempt.json")))
 web_inc = classify(web_ev["description"], web_ev["raw"].get("full_log", ""))
-corr_web = correlate(web_ev["source"], web_ev["server"])
+corr_web = correlate(
+    web_ev["source"],
+    web_ev["server"],
+    current_ip=web_ev.get("related_ip"),
+    current_incident=web_inc,
+)
 remember(web_ev["source"], web_ev["server"], web_inc, web_ev.get("related_ip"))
 check(corr_web is None,
       "web alert chua bi nang cap khi chuoi chua co su kien OS/host")
 host_ev = from_soc_flat(json.load(open("data/samples/webroot_modified.json")))
 host_inc = classify(host_ev["description"], host_ev["raw"].get("full_log", ""))
-corr_host = correlate(host_ev["source"], host_ev["server"])
-incident_b = "Possible Server Compromise" if corr_host else host_inc
+corr_host = correlate(
+    host_ev["source"],
+    host_ev["server"],
+    current_ip=host_ev.get("related_ip"),
+    current_incident=host_inc,
+)
+incident_b = corr_host["incident_type"] if corr_host else host_inc
 s_b = score_envelope(host_ev, incident_b, corr_host, WL)
 check(corr_host is not None and corr_host.get("sources") == ["network", "web", "os"],
       "host event thay du ngu canh network + web truoc do")
-check(incident_b == "Possible Server Compromise", "incident nang cap = " + incident_b)
+check(incident_b == "Possible Server Compromise" and corr_host.get("confidence") == "high"
+      and corr_host.get("src_ip_match") == "true",
+      "incident nang cap high khi IP Network/Web khop = " + incident_b)
 check(s_b >= 90 and severity_of(s_b) == "Critical", "risk = " + str(s_b) + " (" + severity_of(s_b) + ")")
-analysis = ai_explain({"srcip": host_ev.get("related_ip"), "agent_name": host_ev["server"], "full_log": ""}, incident_b, s_b)
+check("T1046" in mitre_for_result(incident_b, corr_host)
+      and "T1505.003" not in mitre_for_result(incident_b, corr_host),
+      "MITRE full chain bam Network/Web/OS evidence thuc te")
+analysis = ai_explain({"srcip": host_ev.get("related_ip"), "agent_name": host_ev["server"], "full_log": ""}, incident_b, s_b, correlation=corr_host)
 print("    analysis = " + analysis[:100] + "...")
 
 print("")
-print("=== 4) Network-aware correlation ===")
+print("=== 4) Correlation Web -> Host khong can Network precursor ===")
+reset()
+web_ev = from_soc_flat(json.load(open("data/samples/nginx_traversal_attempt.json")))
+web_inc = classify(web_ev["description"], web_ev["raw"].get("full_log", ""))
+remember(web_ev["source"], web_ev["server"], web_inc, web_ev.get("related_ip"))
+corr_medium = correlate(
+    host_ev["source"],
+    host_ev["server"],
+    current_ip=host_ev.get("related_ip"),
+    current_incident=host_inc,
+)
+incident_medium = corr_medium["incident_type"] if corr_medium else host_inc
+s_medium = score_envelope(host_ev, incident_medium, corr_medium, WL)
+check(corr_medium is not None and corr_medium.get("confidence") == "medium"
+      and corr_medium.get("src_ip_match") == "unknown",
+      "Web -> Host tao chuoi medium khi khong co Network precursor")
+check(incident_medium == "Suspected Web Compromise" and s_medium < 100,
+      "medium chain khong bi ep thanh full-chain score = " + str(s_medium))
+check("T1505.003" not in mitre_for_result(incident_medium, corr_medium),
+      "medium generic Web/OS khong tu gan MITRE web shell")
+
+print("")
+print("=== 5) Network-aware correlation ===")
 reset()
 network_payload = json.load(open("data/samples/network_port_scan.json"))
 network_ev = from_soc_flat(network_payload)
@@ -109,16 +152,27 @@ network_inc = classify(network_ev["description"], network_ev["raw"].get("full_lo
 remember(network_ev["source"], network_ev["server"], network_inc, network_ev.get("related_ip"))
 web_ev = from_soc_flat(json.load(open("data/samples/nginx_sensitive_path.json")))
 web_inc = classify(web_ev["description"], web_ev["raw"].get("full_log", ""))
-corr_web = correlate(web_ev["source"], web_ev["server"])
+corr_web = correlate(
+    web_ev["source"],
+    web_ev["server"],
+    current_ip=web_ev.get("related_ip"),
+    current_incident=web_inc,
+)
 remember(web_ev["source"], web_ev["server"], web_inc, web_ev.get("related_ip"))
 check(corr_web is None,
       "web alert chua bi nang cap khi chuoi chua co su kien OS/host")
-corr_3 = correlate(host_ev["source"], host_ev["server"])
-check(corr_3 is not None and corr_3.get("sources") == ["network", "web", "os"],
+corr_3 = correlate(
+    host_ev["source"],
+    host_ev["server"],
+    current_ip=host_ev.get("related_ip"),
+    current_incident=host_inc,
+)
+check(corr_3 is not None and corr_3.get("sources") == ["network", "web", "os"]
+      and corr_3.get("src_ip_match") == "true",
       "host event thay du ngu canh network + web truoc do")
 
 print("")
-print("=== 5) Local ML anomaly scoring ===")
+print("=== 6) Local ML anomaly scoring ===")
 ml = evaluate_anomaly(host_ev, incident_b, s_b, corr_host)
 check("model" in ml, "ML tra ve ten model: " + str(ml.get("model")))
 check(0 <= ml.get("anomaly_score", -1) <= 100, "anomaly_score nam trong 0..100")

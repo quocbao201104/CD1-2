@@ -14,7 +14,7 @@ import os
 from fastapi import FastAPI
 
 from app.classifier import classify
-from app.scoring import score_envelope, severity_of, MITRE
+from app.scoring import score_envelope, severity_of, mitre_for_result
 from app.playbook import playbook_for
 from app.explainer import ai_explain
 from app.notifier import notify
@@ -39,10 +39,15 @@ def _pipeline(ev):
     """Xu ly chung cho mot envelope bao mat da chuan hoa."""
     incident = classify(ev.get("description", ""), ev.get("raw", {}).get("full_log", ""))
 
-    corr = correlate(ev["source"], ev.get("server", ""))
+    corr = correlate(
+        ev["source"],
+        ev.get("server", ""),
+        current_ip=ev.get("related_ip"),
+        current_incident=incident,
+    )
     remember(ev["source"], ev.get("server", ""), incident, ev.get("related_ip"))
     if corr:
-        incident = "Possible Server Compromise"
+        incident = corr["incident_type"]
         if not ev.get("related_ip") and corr.get("other_ip"):
             ev = {**ev, "related_ip": corr["other_ip"]}
 
@@ -55,7 +60,7 @@ def _pipeline(ev):
         "agent_name": ev.get("server"),
         "full_log": ev.get("raw", {}).get("full_log", ""),
     }
-    analysis = ai_explain(explain_ctx, incident, s, ml_result)
+    analysis = ai_explain(explain_ctx, incident, s, ml_result, corr)
 
     result = {
         "source": ev["source"],
@@ -64,7 +69,7 @@ def _pipeline(ev):
         "risk_score": s,
         "base_risk_score": base_score,
         "ml": ml_result,
-        "mitre": MITRE.get(incident),
+        "mitre": mitre_for_result(incident, corr),
         "server": ev.get("server"),
         "srcip": ev.get("related_ip"),
         "correlated": bool(corr),

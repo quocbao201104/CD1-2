@@ -79,6 +79,13 @@ PLAYBOOKS = {
         "Xóa tệp sau khi thu thập bằng chứng nếu xác nhận bất thường",
         "Ghi nhận sự cố mức cao",
     ],
+    "Suspected Web Compromise": [
+        "Đối chiếu Nginx access log với thời điểm xảy ra thay đổi OS/FIM",
+        "Kiểm tra auditd/FIM để xác định tệp, tài khoản hoặc lệnh liên quan trong web root",
+        "Kiểm tra tệp mới, authorized_keys và tài khoản hệ thống trước khi kết luận xâm nhập",
+        "Nếu có network precursor, ghi nhận trạng thái liên kết IP thay vì quy kết cùng tác nhân",
+        "Ghi nhận chuỗi cần điều tra; không tự động chặn hoặc khôi phục",
+    ],
     "Possible Server Compromise": [
         "Tổng hợp dòng thời gian Suricata, Nginx access log, FIM và auditd trong cùng cửa sổ 10 phút",
         "Xác định IP nguồn, đường dẫn Web, tệp bị thay đổi và tài khoản/lệnh liên quan trên máy chủ",

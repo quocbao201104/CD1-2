@@ -47,7 +47,7 @@ if [ "$RESUME_GOTIFY" = false ]; then
 fi
 
 for required in requirements.txt .env.example train_model.py evaluate_model.py \
-  test_offline.py verify_deployment.py data/baseline_vm2_20260722.json app/main.py; do
+  test_offline.py verify_deployment.py data/baseline_lab_balanced.json app/main.py; do
   if [ ! -f "$PROJECT_DIR/$required" ]; then
     echo "[ERROR] Thieu source bat buoc: $PROJECT_DIR/$required"
     exit 1
@@ -355,7 +355,7 @@ python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --upgrade pip
 "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt"
 install -o "$TARGET_USER" -g "$TARGET_USER" -m 0600 "$PROJECT_DIR/.env.example" "$ENV_FILE"
-install -o "$TARGET_USER" -g "$TARGET_USER" -m 0644 "$PROJECT_DIR/data/baseline_vm2_20260722.json" "$PROJECT_DIR/data/baseline.json"
+install -o "$TARGET_USER" -g "$TARGET_USER" -m 0644 "$PROJECT_DIR/data/baseline_lab_balanced.json" "$PROJECT_DIR/data/baseline.json"
 chown -R "$TARGET_USER:$TARGET_USER" "$VENV_DIR" "$PROJECT_DIR/data"
 runuser -u "$TARGET_USER" -- "$VENV_DIR/bin/python" "$PROJECT_DIR/train_model.py"
 runuser -u "$TARGET_USER" -- "$VENV_DIR/bin/python" "$PROJECT_DIR/evaluate_model.py"

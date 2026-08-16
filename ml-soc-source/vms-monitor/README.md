@@ -25,6 +25,10 @@ https://<IP_VM2>
 
 ## Cai local rules CD1
 
+Rule `100106` chi nang alert Suricata con `ET SCAN`, `Nmap` hoac `port scan`
+tu rule goc `86601` len level 10. Nhieu alert Suricata khac (vi du DHCP policy)
+giu level mac dinh de khong gay nhieu cho luong CD2.
+
 ```bash
 sudo cp wazuh/local_rules.xml /var/ossec/etc/rules/local_rules.xml
 sudo chown root:wazuh /var/ossec/etc/rules/local_rules.xml

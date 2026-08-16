@@ -131,7 +131,7 @@ stage_config() {
       printf '[Agent đang được Manager quản lý]\n'
       sudo /var/ossec/bin/agent_control -l
       printf '\n[Local rules trọng tâm]\n'
-      sudo grep -nE 'rule id="100100"|rule id="100102"|rule id="100103"|rule id="100104"|rule id="100105"|rule id="100200"|rule id="100201"|rule id="100202"|rule id="100203"|<description>|<mitre>' /var/ossec/etc/rules/local_rules.xml
+      sudo grep -nE 'rule id="100100"|rule id="100102"|rule id="100103"|rule id="100104"|rule id="100105"|rule id="100106"|rule id="100200"|rule id="100201"|rule id="100202"|rule id="100203"|<description>|<mitre>' /var/ossec/etc/rules/local_rules.xml
       ;;
   esac
 }
@@ -151,6 +151,7 @@ stage_network() {
   printf 'Nguồn dự kiến: %s | Đích cố định: %s\n' "$KALI_IP" "$VM1_IP"
   sudo nmap -sS -sV -T4 -p 1-1000 "$VM1_IP"
   sudo nmap -sS -T4 --script http-title,http-headers,ssh-hostkey -p 22,80 "$VM1_IP"
+  printf '[NOTE] Trên VM2, chỉ alert chứa ET SCAN/Nmap mới được rule 100106 nâng lên level 10 để forward sang VM3.\n'
 }
 
 stage_web() {
@@ -269,10 +270,10 @@ stage_evidence() {
       ;;
     vm2)
       printf '[Wazuh alert theo rule demo]\n'
-      sudo grep -E '"id":"(100100|100102|100103|100104|100105|100200|100201|100202|100203)"' \
+      sudo grep -E '"id":"(100100|100102|100103|100104|100105|100106|100200|100201|100202|100203)"' \
         /var/ossec/logs/alerts/alerts.json | tail -n 20 || true
       printf '\nDashboard filter:\n'
-      printf 'agent.name:vms-production AND rule.id:(100100 OR 100102 OR 100103 OR 100104 OR 100105 OR 100200 OR 100201 OR 100202 OR 100203)\n'
+      printf 'agent.name:vms-production AND rule.id:(100100 OR 100102 OR 100103 OR 100104 OR 100105 OR 100106 OR 100200 OR 100201 OR 100202 OR 100203)\n'
       ;;
   esac
 }

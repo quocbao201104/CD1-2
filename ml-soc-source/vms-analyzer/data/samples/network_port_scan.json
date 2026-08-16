@@ -2,7 +2,7 @@
   "timestamp": "2026-05-24T22:31:00+07:00",
   "agent_name": "vms-production",
   "agent_ip": "192.168.245.10",
-  "rule_id": "86601",
+  "rule_id": "100106",
   "rule_level": 10,
   "rule_description": "Suricata: ET SCAN Nmap Scripting Engine User-Agent Detected",
   "mitre_id": ["T1046"],

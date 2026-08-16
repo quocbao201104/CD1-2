@@ -23,8 +23,15 @@ chay local ML bang scikit-learn, de xuat playbook va ghi incident cho admin.
 
 ## Diem nhan CD2
 
-Neu cung mot server co chuoi canh bao network/web/host trong khoang 10 phut, he
-thong nang incident thanh `Possible Server Compromise`.
+Correlation giu cung server, dung thu tu va cua so 10 phut. Network la evidence
+bo sung, khong la dieu kien bat buoc:
+
+- `Web -> OS/host` tao `Suspected Web Compromise` voi confidence `medium`;
+  day la chuoi can dieu tra, chua khang dinh may chu da bi xam nhap.
+- `Network -> Web -> OS/host` chi tao `Possible Server Compromise` voi
+  confidence `high` khi IP nguon Network va Web khop.
+- Neu IP thieu hoac khac nhau, he thong giu `Suspected Web Compromise`/`medium`,
+  luu IP da quan sat va khong quy ket cac su kien cho cung tac nhan.
 
 Vi du:
 
@@ -35,7 +42,7 @@ Web Traversal Attempt
         +
 Web Root Modified
         =>
-Possible Server Compromise, risk Critical
+Possible Server Compromise, confidence high, risk Critical
 ```
 
 Local ML dung `IsolationForest` de danh gia bat thuong dua tren baseline cuc bo.
@@ -135,6 +142,13 @@ Neu may ca nhan chay Gotify client nam tren mot may that khac, VM3 can them NIC
 `Endpoint=<IP_BRIDGED_VM3>:51820`; Gotify URL va `GOTIFY_URL` van giu
 `http://10.66.0.1:8080`. Khong bind Gotify vao IP Bridged.
 
+Template Gotify/`incidents.md` hien thi `Nhãn phân tích` thay cho `Sự cố`, cung
+nguon bang chung, confidence, trang thai lien ket IP Network/Web va cac IP quan
+sat duoc. `Possible Server Compromise` chi noi da quan sat chuoi day du; no
+khong xac dinh danh tinh tac nhan. `Suspected Web Compromise` noi ro khi khong
+co Network precursor hoac khi IP khong du/khong khop, va khong khang dinh may
+chu da bi xam nhap.
+
 ## Policy hanh dong an toan
 
 ```text
@@ -147,14 +161,18 @@ cua CD2 van la chuan hoa alert, correlation, risk scoring va local ML.
 ## Ket qua test offline
 
 - Security pipeline: phan loai sample SSH, network, web, FIM/auditd dung.
-- Correlation: network + web + host cung server -> `Possible Server Compromise`.
-- Network-aware correlation: Suricata alert -> web/host correlation context.
+- Correlation medium: Web + host cung server -> `Suspected Web Compromise`.
+- Correlation high: Network + Web + host voi IP Network/Web khop ->
+  `Possible Server Compromise`.
+- Entity evidence: IP thieu/khac nhau khong duoc nang high va khong quy ket
+  cung tac nhan.
 - Local ML: load baseline, tra ve model, anomaly_score, risk_delta va is_anomaly.
 
-## Baseline VM2 dang su dung
+## Baseline lab dang su dung
 
-- Nguon: 13 su kien binh thuong duoc trich tu archive JSON tren Wazuh/VM2.
-- Thanh phan: 5 network/Suricata, 5 web/Nginx va 3 auth.
+- Nguon: baseline tong hop gom 13 su kien binh thuong trich tu archive JSON
+  tren Wazuh/VM2 va 3 mau OS benign tu baseline lab ban dau.
+- Thanh phan: 5 network/Suricata, 5 web/Nginx, 3 auth va 3 OS.
 - So dac trung: 9.
 - Model: IsolationForest, 200 cay, `contamination=auto`, `random_state=42`.
 - Model duoc luu tai `data/isolation_forest.joblib`; API xac minh SHA-256 cua
@@ -162,6 +180,7 @@ cua CD2 van la chuan hoa alert, correlation, risk scoring va local ML.
 - Neu model thieu hoac khong khop baseline, dich vu fit tam trong bo nho va tra
   `model_source=runtime-fit` de admin nhan biet.
 
-Ket qua ngay 28/07/2026: 13/13 mau binh thuong la inlier va 9/9 kich ban tan
-cong lab la outlier. Day la kiem thu chuc nang tren tap du lieu nho do nhom thu
-thap/thiet ke, khong phai phep do do chinh xac tren du lieu production doc lap.
+Ket qua sau khi bo sung OS benign ngay 15/08/2026: 13/13 mau benign VM2 dung de
+danh gia la inlier va 9/9 kich ban tan cong lab la outlier. Day la kiem thu
+chuc nang tren tap du lieu nho do nhom thu thap/thiet ke, khong phai phep do do
+chinh xac tren du lieu production doc lap.

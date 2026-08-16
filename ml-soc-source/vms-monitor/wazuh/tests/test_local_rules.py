@@ -15,6 +15,15 @@ class LocalRulesTests(unittest.TestCase):
         self.assertIsNone(rule.find("if_group"))
         self.assertIn("shell", rule.findtext("match") or "")
 
+    def test_suricata_nmap_scan_is_elevated_for_vm3_integration(self):
+        root = ET.parse(RULES_PATH).getroot()
+        rule = next(item for item in root.findall("rule") if item.get("id") == "100106")
+
+        self.assertEqual("10", rule.get("level"))
+        self.assertEqual("86601", rule.findtext("if_sid"))
+        self.assertRegex(rule.findtext("match") or "", r"ET SCAN|Nmap|port scan")
+        self.assertIn("T1046", rule.findtext("mitre/id") or "")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -44,9 +44,13 @@ TEMPLATES = {
     "Suspicious Web File":
         "Phát hiện tệp có tên hoặc dấu hiệu đáng nghi trong web root trên {agent}. Điểm rủi ro {score}/100. "
         "Khuyến nghị: cô lập tệp, kiểm tra nội dung, đối chiếu log truy cập Web và tìm dấu hiệu web shell/backdoor.",
+    "Suspected Web Compromise":
+        "Trên {agent} có chuỗi dấu hiệu Web rồi đến OS/host cần điều tra. "
+        "Chưa khẳng định máy chủ đã bị xâm nhập. Điểm rủi ro {score}/100. "
+        "Khuyến nghị: đối chiếu Nginx access log, FIM/auditd và các tệp thay đổi trong web root.",
     "Possible Server Compromise":
-        "CẢNH BÁO NGHIÊM TRỌNG: trên {agent} xuất hiện chuỗi network → web → os trong thời gian ngắn. "
-        "Máy chủ có dấu hiệu bị dò quét, thử khai thác Web và sau đó xuất hiện thay đổi bất thường ở tầng hệ điều hành. "
+        "CẢNH BÁO NGHIÊM TRỌNG: trên {agent} đã quan sát chuỗi evidence network → web → os trong thời gian ngắn. "
+        "Có dấu hiệu dò quét, thử khai thác Web và sau đó xuất hiện thay đổi bất thường ở tầng hệ điều hành. "
         "Điểm rủi ro {score}/100. Khuyến nghị: kiểm tra Suricata, Nginx access log, FIM/auditd và web root; "
         "chặn IP {ip} nếu nằm ngoài danh sách cho phép và thu thập log phục vụ điều tra.",
     "Unknown":
@@ -67,7 +71,25 @@ def _ml_sentence(ml_result: dict | None) -> str:
     )
 
 
-def ai_explain(a, incident, s, ml_result=None):
+def _correlation_sentence(correlation: dict | None) -> str:
+    if not correlation:
+        return ""
+    if correlation.get("incident_type") == "Possible Server Compromise":
+        return (
+            " Chuỗi đầy đủ Network → Web → OS được quan sát; IP Network/Web "
+            "khớp là bằng chứng liên kết, không xác định danh tính tác nhân."
+        )
+    if not correlation.get("has_network_precursor"):
+        return " Không quan sát network precursor cho chuỗi Web → OS này."
+    match = correlation.get("src_ip_match")
+    label = "không đủ dữ liệu" if match == "unknown" else "không khớp"
+    return (
+        " Có network precursor nhưng liên kết IP Network/Web "
+        f"{label}; không quy kết các sự kiện cho cùng tác nhân."
+    )
+
+
+def ai_explain(a, incident, s, ml_result=None, correlation=None):
     """Return local explanation text.
 
     The function name is kept for compatibility with the older pipeline, but it
@@ -80,4 +102,4 @@ def ai_explain(a, incident, s, ml_result=None):
         agent=a.get("agent_name") or "N/A",
         score=s,
     )
-    return text + _ml_sentence(ml_result)
+    return text + _correlation_sentence(correlation) + _ml_sentence(ml_result)

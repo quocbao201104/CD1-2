@@ -51,7 +51,6 @@ Chạy đúng stage trên đúng máy:
   watch       VM3              - theo dõi POST realtime; Ctrl+C để dừng
   live-attack Kali             - traversal thật qua chuỗi CD1 -> CD2
   evidence    VM2/VM3          - alert Wazuh, incident và ML
-  correlation VM3              - replay network -> web -> os ổn định
   tests       VM3              - kiểm tra deployment ngắn gọn
 
 Gotify trên PC2: bật WireGuard rồi mở http://10.66.0.1:8080.
@@ -174,11 +173,20 @@ from pathlib import Path
 meta = json.loads(Path('data/isolation_forest_metadata.json').read_text(encoding='utf-8'))
 report = json.loads(Path('data/evaluation_report.json').read_text(encoding='utf-8'))
 baseline = json.loads(Path('data/baseline.json').read_text(encoding='utf-8'))
+names = ['network', 'web', 'os', 'auth']
+coverage = {name: 0 for name in names}
+unique_vectors = {tuple(row) for row in baseline}
+for row in baseline:
+    for index, name in enumerate(names):
+        if row[index] == 1:
+            coverage[name] += 1
 
 print('model_type       =', meta.get('model') or meta.get('model_type') or meta.get('algorithm'))
 print('feature_count    =', len(meta.get('feature_names', [])) or meta.get('feature_count'))
 print('n_estimators     =', meta.get('n_estimators'))
 print('baseline_rows    =', len(baseline))
+print('baseline_unique  =', len(unique_vectors))
+print('baseline_cover   =', coverage)
 print('model_file       =', Path('data/isolation_forest.joblib').is_file())
 print('evaluation_keys  =', ', '.join(sorted(report.keys())))
 PY
@@ -250,33 +258,6 @@ stage_evidence() {
   esac
 }
 
-post_sample() {
-  local sample="$1"
-  printf '\n--- POST %s ---\n' "$sample"
-  curl -fsS -X POST http://127.0.0.1:8000/analyze-alert \
-    -H 'Content-Type: application/json' \
-    --data-binary "@data/samples/${sample}" | print_result_summary
-}
-
-stage_correlation() {
-  local role="$1"
-  require_role "$role" vm3
-  title 'CD2 CORRELATION - NETWORK -> WEB -> OS'
-  cd "$PROJECT_DIR"
-  printf '[RESET] Restart Analyzer để correlation buffer sạch.\n'
-  sudo systemctl restart vms-analyzer
-  for attempt in $(seq 1 10); do
-    curl -fsS --max-time 2 http://127.0.0.1:8000/health >/dev/null 2>&1 && break
-    sleep 1
-  done
-  curl -fsS http://127.0.0.1:8000/health
-  printf '\n'
-  post_sample network_port_scan.json
-  post_sample nginx_traversal_attempt.json
-  post_sample webroot_modified.json
-  printf '\n[EXPECTED] Event cuối có Possible Server Compromise và sources network, web, os.\n'
-}
-
 stage_tests() {
   local role="$1"
   require_role "$role" vm3
@@ -305,7 +286,6 @@ main() {
     watch) stage_watch "$role" ;;
     live-attack) stage_live_attack "$role" ;;
     evidence) stage_evidence "$role" ;;
-    correlation) stage_correlation "$role" ;;
     tests) stage_tests "$role" ;;
     help|-h|--help) usage ;;
     *) usage; exit 1 ;;

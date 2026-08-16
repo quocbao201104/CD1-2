@@ -14,6 +14,7 @@ BASE = {
     "Web Traversal Attempt": 50,
     "Web Root Modified": 60,
     "Suspicious Web File": 70,
+    "Suspected Web Compromise": 70,
     "Possible Server Compromise": 90,
     "Unknown": 10,
 }
@@ -30,7 +31,8 @@ MITRE = {
     "Web Traversal Attempt": "T1190 - Exploit Public-Facing Application",
     "Web Root Modified": "T1491 - Defacement",
     "Suspicious Web File": "T1505.003 - Web Shell",
-    "Possible Server Compromise": "T1190/T1505.003/T1548 - Web Exploit / Web Shell / Privilege Escalation",
+    "Suspected Web Compromise": "N/A",
+    "Possible Server Compromise": "N/A",
     "Unknown": "N/A",
 }
 
@@ -63,10 +65,46 @@ def score_envelope(ev, incident, corr, whitelist):
         s += 20
     if is_off_hours(ev.get("timestamp", "")):
         s += 20
-    if corr:
+    if (
+        corr
+        and corr.get("confidence") == "high"
+        and incident == "Possible Server Compromise"
+    ):
         s = max(s, BASE["Possible Server Compromise"])
         s += 10
     return min(s, 100)
+
+
+def mitre_for_result(incident, corr=None):
+    """Return MITRE techniques backed by the actual selected evidence.
+
+    A matching Network/Web IP is evidence linkage, not identity attribution.
+    Network discovery is included only for the high-confidence full chain. Web
+    shell T1505.003 is included only when a selected evidence incident is a
+    suspicious web file.
+    """
+    if not corr:
+        return MITRE.get(incident, MITRE["Unknown"])
+
+    evidence = list(corr.get("precursor_incidents") or [])
+    current_incident = corr.get("current_incident")
+    if current_incident:
+        evidence.append(current_incident)
+
+    techniques = []
+    include_network = (
+        incident == "Possible Server Compromise"
+        and corr.get("confidence") == "high"
+        and corr.get("src_ip_match") == "true"
+    )
+    for evidence_incident in evidence:
+        if evidence_incident == "Network Port Scan" and not include_network:
+            continue
+        technique = MITRE.get(evidence_incident)
+        if technique and technique != "N/A" and technique not in techniques:
+            techniques.append(technique)
+
+    return " / ".join(techniques) if techniques else MITRE["Unknown"]
 
 
 def severity_of(s):

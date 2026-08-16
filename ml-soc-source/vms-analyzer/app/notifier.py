@@ -3,6 +3,66 @@ import os
 import datetime
 import requests
 
+_SOURCE_VI = {
+    "network": "Mạng",
+    "web": "Web",
+    "os": "Hệ điều hành",
+    "host": "Hệ điều hành",
+}
+_CONFIDENCE_VI = {"high": "Cao", "medium": "Trung bình"}
+_IP_MATCH_VI = {
+    "true": "Khớp",
+    "false": "Không khớp",
+    "unknown": "Không đủ dữ liệu",
+}
+
+
+def _correlation_text(result: dict) -> str:
+    correlation = result.get("correlation")
+    if not correlation:
+        return "Trạng thái: Không - cảnh báo đơn lẻ"
+
+    sources = correlation.get("sources") or []
+    source_text = " → ".join(_SOURCE_VI.get(source, source) for source in sources)
+    confidence = _CONFIDENCE_VI.get(
+        correlation.get("confidence"), "Chưa xác định"
+    )
+    ip_match = _IP_MATCH_VI.get(
+        correlation.get("src_ip_match"), "Không đủ dữ liệu"
+    )
+    observed_ips = correlation.get("observed_ips") or {}
+    ip_text = "; ".join(
+        f"{label}={observed_ips.get(key) or 'Không có'}"
+        for key, label in (("network", "Network"), ("web", "Web"), ("os", "OS"))
+    )
+    lines = [
+        f"Nguồn bằng chứng: {source_text or 'Không xác định'}",
+        f"Độ tin cậy: {confidence}",
+        f"Liên kết IP nguồn (Network/Web): {ip_match}",
+        f"IP quan sát được: {ip_text}",
+    ]
+
+    if (
+        result.get("incident_type") == "Possible Server Compromise"
+        and correlation.get("confidence") == "high"
+    ):
+        lines.append("Chuỗi đầy đủ Mạng → Web → Hệ điều hành được quan sát.")
+    elif (
+        result.get("incident_type") == "Suspected Web Compromise"
+        and not correlation.get("has_network_precursor")
+    ):
+        lines.append(
+            "Không quan sát network precursor. Chuỗi Web → Hệ điều hành cần "
+            "điều tra; chưa khẳng định máy chủ đã bị xâm nhập."
+        )
+    elif result.get("incident_type") == "Suspected Web Compromise":
+        lines.append(
+            "Có quan sát network precursor nhưng liên kết IP Network/Web "
+            f"{ip_match.lower()}; không quy kết các sự kiện cho cùng tác nhân. "
+            "Chuỗi Web → Hệ điều hành cần điều tra; chưa khẳng định máy chủ đã bị xâm nhập."
+        )
+    return "\n".join(lines)
+
 
 def _format(result: dict) -> str:
     severity = result.get("severity", "Unknown")
@@ -23,15 +83,11 @@ def _format(result: dict) -> str:
     anomaly_value = ml.get("is_anomaly")
     anomaly_text = "Có" if anomaly_value is True else "Không" if anomaly_value is False else "Chưa xác định"
     risk_delta = int(ml.get("risk_delta") or 0)
-    correlation_text = (
-        "Có - network → web → os"
-        if result.get("correlated")
-        else "Không - cảnh báo đơn lẻ"
-    )
+    correlation_text = _correlation_text(result)
 
     return (
         f"{severity_icon} CẢNH BÁO BẢO MẬT\n"
-        f"Sự cố: {result.get('incident_type', 'Chưa phân loại')}\n"
+        f"Nhãn phân tích: {result.get('incident_type', 'Chưa phân loại')}\n"
         f"Mức độ: {severity_vi} ({severity})\n\n"
         f"🖥️ ĐỐI TƯỢNG\n"
         f"Máy chủ: {result.get('agent') or 'Không xác định'}\n"
