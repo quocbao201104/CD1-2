@@ -183,7 +183,7 @@ check(fv[0] == 0 and fv[1] == 0 and fv[2] == 1 and fv[6] == 1 and fv[7] == 1,
       "feature vector bat co OS/host + correlated + network precursor")
 baseline, baseline_source = load_training_baseline("data/baseline.json")
 check(baseline_source.endswith("data/baseline.json"), "ML load baseline tu data/baseline.json")
-check(len(baseline) >= 12 and all(len(row) == 9 for row in baseline), "baseline co du vector 9 dac trung")
+check(len(baseline) == 16 and all(len(row) == 9 for row in baseline), "baseline co 16 vector 9 dac trung")
 check(os.path.exists("collect_baseline.py"), "co script collect_baseline.py de tao baseline tu sample/alert")
 
 print("")

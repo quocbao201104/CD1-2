@@ -3,8 +3,16 @@ from pathlib import Path
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-DEMO_SCRIPT = WORKSPACE / "ThucThi_Demo_CD2.sh"
-REPLAY_SCRIPT = WORKSPACE / "KiemThu_Replay_Correlation_CD2.sh"
+
+
+def _script_path(name: str) -> Path:
+    """Find lab demo scripts in a VM home directory or the source workspace."""
+    home_copy = Path.home() / name
+    return home_copy if home_copy.is_file() else WORKSPACE / name
+
+
+DEMO_SCRIPT = _script_path("ThucThi_Demo_CD2.sh")
+REPLAY_SCRIPT = _script_path("KiemThu_Replay_Correlation_CD2.sh")
 
 
 class DemoReplaySeparationTests(unittest.TestCase):
