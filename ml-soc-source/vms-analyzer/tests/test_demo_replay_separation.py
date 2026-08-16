@@ -29,6 +29,15 @@ class DemoReplaySeparationTests(unittest.TestCase):
         self.assertIn("KHÔNG PHẢI LUỒNG LIVE", content)
         self.assertIn("network_port_scan.json", content)
 
+    def test_evidence_summary_exposes_correlation_tier_and_ip_evidence(self):
+        content = DEMO_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('"correlation_confidence": correlation.get("confidence")', content)
+        self.assertIn('"src_ip_match": correlation.get("src_ip_match")', content)
+        self.assertIn('"observed_ips": correlation.get("observed_ips")', content)
+        self.assertIn("[CORRELATION SUMMARY - INCIDENT MỚI NHẤT]", content)
+        self.assertIn("Nguồn bằng chứng:|Độ tin cậy:|Liên kết IP nguồn|IP quan sát được:", content)
+
 
 if __name__ == "__main__":
     unittest.main()

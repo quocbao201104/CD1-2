@@ -86,6 +86,9 @@ summary = {
     "correlated": data.get("correlated"),
     "correlation_sources": correlation.get("sources"),
     "has_network_precursor": correlation.get("has_network_precursor"),
+    "correlation_confidence": correlation.get("confidence"),
+    "src_ip_match": correlation.get("src_ip_match"),
+    "observed_ips": correlation.get("observed_ips"),
     "actions": data.get("actions"),
 }
 print(json.dumps(summary, ensure_ascii=False, indent=2))
@@ -253,6 +256,10 @@ stage_evidence() {
         grep -E 'POST /analyze-alert|risk|incident|ERROR' | tail -n 30 || true
       printf '\n[Incident mới nhất: classifier + ML + risk + correlation + DRY_RUN]\n'
       tail -n 45 "$PROJECT_DIR/incidents.md"
+      printf '\n[CORRELATION SUMMARY - INCIDENT MỚI NHẤT]\n'
+      tail -n 60 "$PROJECT_DIR/incidents.md" | \
+        grep -E 'Nhãn phân tích:|Mức độ:|Tổng điểm:|Nguồn bằng chứng:|Độ tin cậy:|Liên kết IP nguồn|IP quan sát được:' | \
+        tail -n 12 || true
       printf '\n[Gotify qua WireGuard]\n%s\n' "$GOTIFY_URL"
       ;;
   esac
