@@ -16,11 +16,12 @@ IP/dịch vụ bốn VM
   -> hoạt động hợp lệ từ PC2 và mẫu benign
   -> alert traversal thật Kali -> VM1 -> VM2 -> VM3
   -> incidents.md + ML + Gotify
-  -> correlation network -> web -> os
+  -> correlation Web -> OS (medium)
+  -> correlation Network -> Web -> OS (high khi IP Network/Web khớp)
   -> verify deployment
 ```
 
-Thời lượng đề xuất: **10–13 phút**.
+Thời lượng đề xuất: **11–14 phút**.
 
 ## 2. Topology dùng trong video
 
@@ -31,7 +32,7 @@ Thời lượng đề xuất: **10–13 phút**.
 | VM1 | `192.168.245.10` | Sinh log bảo mật |
 | VM2 | `192.168.245.20` | Wazuh phát hiện và forward alert level ≥ 8 |
 | VM3 | `192.168.245.30` | Analyzer FastAPI và ML |
-| VM3 Bridged | `192.168.100.45` trên `ens38` | Endpoint WireGuard hiện tại |
+| VM3 Bridged | Lấy theo runtime của `ens38` | Endpoint WireGuard; kiểm tra bằng `ip -br -4 addr show ens38` |
 | VM3 WireGuard | `10.66.0.1` | Gotify riêng tư |
 
 Luồng SOC chính chỉ dùng Host-only:
@@ -103,7 +104,7 @@ Chỉ giữ các bằng chứng sau:
 - VM2 có Wazuh stack `active`, Agent `vms-production` ID `002` là `Active`.
 - VM2 gọi `http://192.168.245.30:8000/health` nhận `{"status":"ok"}`.
 - VM3 có `vms-analyzer`, `gotify`, `wg-quick@wg0` active.
-- VM3: `ens33=.30`, `ens38=.45`, `wg0=10.66.0.1`.
+- VM3: `ens33=.30`, `wg0=10.66.0.1`; địa chỉ Bridged `ens38` lấy theo runtime tại thời điểm quay.
 
 Không cần đọc toàn bộ route table hoặc danh sách package Python.
 
@@ -277,7 +278,7 @@ Giữ hình rule `100201`, level `10`, MITRE `T1190` và URL trong `full_log`.
 ~/ThucThi_Demo_CD2.sh evidence
 ```
 
-**Lồng tiếng ngắn:** “VM3 ghi nhận request POST, phân loại sự cố, chấm điểm rủi
+**Lồng tiếng ngắn:** “VM3 ghi nhận request POST, tạo nhãn phân tích, chấm điểm rủi
 ro, bổ sung kết quả IsolationForest và sinh playbook xử lý.”
 
 Giữ hình các trường trong incident mới nhất:
@@ -305,45 +306,149 @@ Gotify chỉ là kênh chuyển thông tin, không tham gia quyết định phâ
 Giữ hình thông báo High/Critical có icon, risk, ML, correlation, phân tích và
 khuyến nghị. Gotify là lớp thông báo tự host, không tham gia ra quyết định.
 
-## Cảnh 7 — Full chain live network → web → os
+## Cảnh 7 — Kiểm chứng hai mức correlation
 
-Đây là lượt thực nghiệm live, không dùng sample/replay. Trước bước đầu tiên,
-trên VM3 chạy `~/ThucThi_Demo_CD2.sh reset`; không restart VM3 giữa ba bước.
+Cảnh này gồm **hai lượt độc lập**. Trước mỗi lượt, trên VM3 chạy
+`~/ThucThi_Demo_CD2.sh reset` để xóa correlation buffer. Không restart Analyzer
+giữa các bước của cùng một lượt.
 
-1. Trên Kali chạy `~/ThucThi_Demo_CD1.sh network`.
-2. Trên VM2 xác nhận Dashboard có `agent.name:vms-production AND rule.id:100106`.
-3. Trên Kali chạy `~/ThucThi_Demo_CD1.sh web`.
-4. Trên VM1 chạy `~/ThucThi_Demo_CD1.sh fim`.
-5. Trên VM3 chạy `~/ThucThi_Demo_CD2.sh evidence`.
+### 7A. Web → OS: Suspected Web Compromise / medium
 
-**Lồng tiếng ngắn:** “Ba sự kiện Network, Web và OS đều được sinh từ các VM lab,
-đi qua Wazuh VM2 rồi tới VM3. Không dùng alert mẫu trong lượt thực nghiệm này.”
+Mục tiêu của lượt thứ nhất là chứng minh Network không còn là điều kiện bắt buộc
+để hình thành một timeline Web-compromise.
 
-Ở incident cuối, giữ hình:
+1. Trên VM3 chạy:
 
-```text
-incident_type = Possible Server Compromise
-sources       = network, web, os
-has_network_precursor = true
-confidence    = high
-src_ip_match  = true
-risk          = Critical/high score
-actions       = proposed hoặc yêu cầu xác nhận
+```bash
+~/ThucThi_Demo_CD2.sh reset
 ```
 
-**Lồng tiếng ngắn:** “Kết quả cuối chỉ được nâng thành Possible Server
-Compromise khi đủ ba lớp và IP Network với Web khớp. IP khớp là bằng chứng liên
-kết, không xác định cùng tác nhân. Hành động phản ứng vẫn chỉ ở trạng thái đề
-xuất.”
+2. Trên Kali tạo Web Traversal:
 
-Điểm cần nói khi lồng tiếng:
+```bash
+~/ThucThi_Demo_CD1.sh web
+```
 
-- Correlation mức cao cần đủ ba lớp, cùng server, đúng thứ tự trong cửa sổ 600
-  giây và `src_ip_match=true`; nếu IP thiếu/khác, VM3 giữ mức điều tra
-  `Suspected Web Compromise`.
-- `DRY_RUN=true` nên không có IP nào bị chặn thật.
+3. Trên VM2 xác nhận alert Web của `vms-production`, ưu tiên rule `100201`.
 
-Mở Gotify và giữ hình thông báo tương quan mới nhất.
+4. Trên VM1 tạo thay đổi Web root/FIM:
+
+```bash
+~/ThucThi_Demo_CD1.sh fim
+```
+
+5. Trên VM2 xác nhận alert OS/FIM tương ứng, ưu tiên rule `100202`.
+
+6. Trên VM3 chạy:
+
+```bash
+~/ThucThi_Demo_CD2.sh evidence
+```
+
+Giữ hình các trường:
+
+```text
+incident_type         = Suspected Web Compromise
+sources               = web, os
+has_network_precursor = false
+confidence            = medium
+src_ip_match          = unknown
+actions               = proposed / DRY_RUN
+```
+
+**Lồng tiếng ngắn:** “Khi Web được quan sát trước thay đổi OS/FIM trên cùng máy
+chủ và trong cửa sổ 600 giây, Analyzer hình thành Suspected Web Compromise với
+độ tin cậy trung bình. Không có network precursor nên hệ thống không nâng kết
+quả lên mức cao.”
+
+Không phát biểu rằng máy chủ đã chắc chắn bị xâm nhập. Đây là nhãn phân tích hỗ
+trợ ưu tiên điều tra.
+
+### 7B. Network → Web → OS: Possible Server Compromise / high
+
+Lượt thứ hai kiểm tra việc Network precursor làm tăng độ tin cậy của timeline.
+Phải reset buffer trước khi bắt đầu:
+
+```bash
+~/ThucThi_Demo_CD2.sh reset
+```
+
+Sau đó thực hiện đúng thứ tự:
+
+1. Trên Kali:
+
+```bash
+~/ThucThi_Demo_CD1.sh network
+```
+
+2. Trên VM2 xác nhận Dashboard có alert `rule.id:100106` trên
+`agent.name:vms-production`.
+
+3. Trên Kali:
+
+```bash
+~/ThucThi_Demo_CD1.sh web
+```
+
+4. Trên VM2 xác nhận alert Web và kiểm tra IP nguồn của Network/Web.
+
+5. Trên VM1:
+
+```bash
+~/ThucThi_Demo_CD1.sh fim
+```
+
+6. Trên VM3:
+
+```bash
+~/ThucThi_Demo_CD2.sh evidence
+```
+
+Kết quả chỉ được nâng lên mức high khi Network và Web có IP nguồn khớp. Giữ hình:
+
+```text
+incident_type         = Possible Server Compromise
+sources               = network, web, os
+has_network_precursor = true
+confidence            = high
+src_ip_match          = true
+risk                  = Critical / high score
+actions               = proposed / DRY_RUN
+```
+
+**Lồng tiếng ngắn:** “Network precursor xuất hiện trước Web và có IP nguồn khớp
+với Web, vì vậy khi sự kiện OS/FIM tới, Analyzer nâng timeline thành Possible
+Server Compromise với độ tin cậy cao. IP khớp chỉ là bằng chứng liên kết giữa
+Network và Web, không chứng minh danh tính hoặc cùng một tác nhân.”
+
+Nếu có Network precursor nhưng IP Network/Web thiếu hoặc không khớp, kết quả
+không được nâng lên high mà giữ:
+
+```text
+incident_type = Suspected Web Compromise
+confidence    = medium
+src_ip_match  = unknown hoặc false
+```
+
+`DRY_RUN=true` nên hệ thống chỉ tạo playbook và hành động đề xuất, không chặn IP
+hoặc thay đổi VM1.
+
+### 7C. Yêu cầu về live và replay
+
+Hai lượt trên ưu tiên sử dụng alert live đi theo chuỗi:
+
+```text
+Kali -> VM1 -> Wazuh VM2 -> Analyzer VM3
+```
+
+Rule `100106` trên VM2 được dùng để đưa alert Suricata port-scan phù hợp lên mức
+có thể chuyển tiếp sang VM3. Nếu phải dùng direct POST hoặc sample để kiểm tra
+logic, phải ghi rõ đó là **replay/functional test** và không dùng kết quả đó để
+mô tả một full live end-to-end flow.
+
+Mở Gotify sau mỗi lượt nếu risk đạt ngưỡng để đối chiếu nhãn phân tích,
+confidence, chuỗi evidence và trạng thái IP. Gotify chỉ là lớp thông báo, không
+tham gia quyết định correlation.
 
 ## Cảnh 8 — Xác minh deployment ngắn gọn
 
@@ -428,7 +533,8 @@ Gotify chỉ nhận incident có risk đạt `GOTIFY_MIN_RISK=60`.
 - [ ] Có alert thật `100201` từ Kali qua VM1 và VM2 sang VM3.
 - [ ] `incidents.md` có classifier, risk, ML, correlation và playbook.
 - [ ] Gotify truy cập qua WireGuard và có thông báo theo ngưỡng.
-- [ ] Correlation live cuối đủ `network -> web -> os`, có alert VM2 rule `100106`.
+- [ ] Lượt correlation `web -> os` tạo `Suspected Web Compromise`, `confidence=medium`.
+- [ ] Lượt `network -> web -> os` có alert VM2 rule `100106` và chỉ lên `high` khi `src_ip_match=true`.
 - [ ] `verify_deployment.py` trả `ALL_CHECKS_PASSED=True`.
 - [ ] Không nói anomaly score là xác suất bị xâm nhập.
 - [ ] Không lộ token, mật khẩu hoặc private key.
