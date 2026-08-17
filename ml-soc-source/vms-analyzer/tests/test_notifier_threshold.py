@@ -83,6 +83,7 @@ class GotifyThresholdTests(unittest.TestCase):
         self.assertIn("Điểm theo luật: 90/100", text)
         self.assertIn("ML đề xuất: +10; áp dụng vào điểm: +10", text)
         self.assertIn("Bất thường: Có", text)
+        self.assertIn("IP nguồn đối tượng nghi ngờ (Network/Web): 192.168.245.40 (Khớp)", text)
         self.assertIn("Nhãn phân tích: Possible Server Compromise", text)
         self.assertIn("Nguồn bằng chứng: Mạng → Web → Hệ điều hành", text)
         self.assertIn("Độ tin cậy: Cao", text)

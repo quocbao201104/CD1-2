@@ -90,6 +90,19 @@ def _format(result: dict) -> str:
     risk_delta = int(ml.get("risk_delta") or 0)
     applied_ml_delta = int(ml.get("risk_delta_applied", risk_delta) or 0)
     correlation_text = _correlation_text(result)
+    correlation = result.get("correlation") or {}
+    observed_ips = correlation.get("observed_ips") or {}
+    linked_ip = ""
+    if (
+        correlation.get("confidence") == "high"
+        and correlation.get("src_ip_match") == "true"
+        and observed_ips.get("network")
+        and observed_ips.get("network") == observed_ips.get("web")
+    ):
+        linked_ip = (
+            "\nIP nguồn đối tượng nghi ngờ (Network/Web): "
+            f"{observed_ips['network']} (Khớp)"
+        )
 
     return (
         f"{severity_icon} CẢNH BÁO BẢO MẬT\n"
@@ -99,7 +112,8 @@ def _format(result: dict) -> str:
         f"Máy chủ: {result.get('agent') or 'Không xác định'}\n"
         f"IP máy chủ: {result.get('server_ip') or 'Chưa ghi nhận'}\n\n"
         f"📍 NGUỒN CỦA ALERT HIỆN TẠI\n"
-        f"IP nguồn alert hiện tại: {result.get('srcip') or 'Chưa ghi nhận'}\n\n"
+        f"IP nguồn alert hiện tại: {result.get('srcip') or 'Chưa ghi nhận'}"
+        f"{linked_ip}\n\n"
         f"📊 ĐÁNH GIÁ RỦI RO\n"
         f"Tổng điểm: {result.get('risk_score', 0)}/100\n"
         f"Điểm theo luật: {result.get('base_risk_score', 0)}/100\n"
