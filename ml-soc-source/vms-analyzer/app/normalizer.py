@@ -59,6 +59,12 @@ def _is_auth_alert(description: str, full_log: str, location: str = "") -> bool:
 def _source_for(description: str, full_log: str, location: str = "") -> str:
     if _is_network_alert(description, full_log, location):
         return "network"
+    # FIM changes under the web root are host evidence, not Web-request
+    # evidence. Local Wazuh rules may label these messages "WEB:", so this
+    # distinction must run before the generic Web keyword check below.
+    host_text = f"{description} {full_log} {location}".lower()
+    if "/var/www/html" in host_text or "web root" in host_text:
+        return "os"
     if _is_web_alert(description, full_log, location):
         return "web"
     if _is_auth_alert(description, full_log, location):

@@ -45,6 +45,7 @@ class CorrelationPipelineTests(unittest.TestCase):
         self.assertEqual("unknown", result["correlation"]["src_ip_match"])
         self.assertEqual(70, result["base_risk_score"])
         self.assertNotEqual(100, result["base_risk_score"])
+        self.assertEqual("T1190 - Exploit Public-Facing Application", result["mitre"])
         self.assertNotIn("T1505.003", result["mitre"])
 
     @patch("app.main.policy_engine", return_value=[])

@@ -29,7 +29,8 @@ MITRE = {
     "Network Port Scan": "T1046 - Network Service Discovery",
     "Web Sensitive Path Scan": "T1595 - Active Scanning",
     "Web Traversal Attempt": "T1190 - Exploit Public-Facing Application",
-    "Web Root Modified": "T1491 - Defacement",
+    # A generic FIM modification does not prove content defacement.
+    "Web Root Modified": "N/A",
     # A suspicious filename alone is not proof that a functional web shell ran.
     "Suspicious Web File": "N/A",
     "Suspected Web Compromise": "N/A",
