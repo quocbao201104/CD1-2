@@ -33,6 +33,12 @@ bo sung, khong la dieu kien bat buoc:
 - Neu IP thieu hoac khac nhau, he thong giu `Suspected Web Compromise`/`medium`,
   luu IP da quan sat va khong quy ket cac su kien cho cung tac nhan.
 
+`server_ip` la IP agent/may chu duoc bao ve; `srcip` la IP nguon cua alert hien
+tai. IP cua precursor chi nam trong `observed_ips`, khong duoc ghi de vao
+`srcip`. Medium correlation bi gioi han o 79 (High). API va notifier tra ca
+`risk_delta` va `risk_delta_applied` de phan biet diem ML de xuat voi diem
+thuc su ap dung sau policy cap.
+
 Vi du:
 
 ```text
@@ -147,7 +153,8 @@ nguon bang chung, confidence, trang thai lien ket IP Network/Web va cac IP quan
 sat duoc. `Possible Server Compromise` chi noi da quan sat chuoi day du; no
 khong xac dinh danh tinh tac nhan. `Suspected Web Compromise` noi ro khi khong
 co Network precursor hoac khi IP khong du/khong khop, va khong khang dinh may
-chu da bi xam nhap.
+chu da bi xam nhap. Thong bao tach ro IP may chu, IP nguon cua alert hien tai
+va IP quan sat theo tung evidence.
 
 ## Policy hanh dong an toan
 

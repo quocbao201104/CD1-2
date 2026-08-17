@@ -8,6 +8,7 @@ Envelope:
 """
 import json
 import os
+import re
 
 _HOST_MAP_PATH = os.getenv("HOST_MAP_PATH", "data/host_map.json")
 try:
@@ -65,12 +66,18 @@ def _source_for(description: str, full_log: str, location: str = "") -> str:
     return "os"
 
 
-def _srcip_from_json_log(full_log: str):
+def _srcip_from_log(full_log: str):
     try:
         data = json.loads(full_log)
     except Exception:
-        return None
-    return data.get("src_ip") or data.get("srcip")
+        data = None
+    if isinstance(data, dict):
+        return data.get("src_ip") or data.get("srcip")
+
+    # Nginx Common/Combined Log Format: "<client-ip> - - [timestamp] ...".
+    # Wazuh does not always place this IP in data.srcip for local web rules.
+    match = re.match(r"^\s*([0-9A-Fa-f:.]+)\s+-\s+-\s+\[", full_log or "")
+    return match.group(1) if match else None
 
 
 def from_soc_flat(p: dict) -> dict:
@@ -82,10 +89,11 @@ def from_soc_flat(p: dict) -> dict:
         "source": _source_for(description, full_log, location),
         "timestamp": p.get("timestamp", ""),
         "server": p.get("agent_name") or HOST_MAP.get(p.get("agent_ip", ""), p.get("agent_ip", "")),
+        "server_ip": p.get("agent_ip", ""),
         "alert_type": description,
         "severity": _sev(p.get("rule_level", 0)),
         "description": description,
-        "related_ip": p.get("srcip") or _srcip_from_json_log(full_log),
+        "related_ip": p.get("srcip") or _srcip_from_log(full_log),
         "raw": {
             "rule_id": str(p.get("rule_id", "")),
             "rule_level": p.get("rule_level", 0),
@@ -109,10 +117,11 @@ def from_wazuh(p: dict) -> dict:
         "source": _source_for(description, full_log, location),
         "timestamp": p.get("timestamp", ""),
         "server": agent.get("name") or HOST_MAP.get(agent.get("ip", ""), agent.get("ip", "")),
+        "server_ip": agent.get("ip", ""),
         "alert_type": description,
         "severity": _sev(rule.get("level", 0)),
         "description": description,
-        "related_ip": data.get("srcip") or data.get("src_ip") or _srcip_from_json_log(full_log),
+        "related_ip": data.get("srcip") or data.get("src_ip") or _srcip_from_log(full_log),
         "raw": {
             "rule_id": str(rule.get("id", "")),
             "rule_level": rule.get("level", 0),

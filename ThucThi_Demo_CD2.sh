@@ -82,6 +82,7 @@ summary = {
         "is_anomaly": ml.get("is_anomaly"),
         "anomaly_score": ml.get("anomaly_score"),
         "risk_delta": ml.get("risk_delta"),
+        "risk_delta_applied": ml.get("risk_delta_applied"),
     },
     "correlated": data.get("correlated"),
     "correlation_sources": correlation.get("sources"),
@@ -258,8 +259,8 @@ stage_evidence() {
       tail -n 45 "$PROJECT_DIR/incidents.md"
       printf '\n[CORRELATION SUMMARY - INCIDENT MỚI NHẤT]\n'
       tail -n 60 "$PROJECT_DIR/incidents.md" | \
-        grep -E 'Nhãn phân tích:|Mức độ:|Tổng điểm:|Nguồn bằng chứng:|Độ tin cậy:|Liên kết IP nguồn|IP quan sát được:' | \
-        tail -n 12 || true
+        grep -E 'Nhãn phân tích:|Mức độ:|Tổng điểm:|IP máy chủ:|IP nguồn alert hiện tại:|Nguồn bằng chứng:|Độ tin cậy:|Liên kết IP nguồn|IP quan sát được:|Sự kiện đã quan sát:' | \
+        tail -n 16 || true
       printf '\n[Gotify qua WireGuard]\n%s\n' "$GOTIFY_URL"
       ;;
   esac

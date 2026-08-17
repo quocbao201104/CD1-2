@@ -30,7 +30,8 @@ MITRE = {
     "Web Sensitive Path Scan": "T1595 - Active Scanning",
     "Web Traversal Attempt": "T1190 - Exploit Public-Facing Application",
     "Web Root Modified": "T1491 - Defacement",
-    "Suspicious Web File": "T1505.003 - Web Shell",
+    # A suspicious filename alone is not proof that a functional web shell ran.
+    "Suspicious Web File": "N/A",
     "Suspected Web Compromise": "N/A",
     "Possible Server Compromise": "N/A",
     "Unknown": "N/A",
@@ -57,6 +58,21 @@ def score(incident, srcip, ts, whitelist):
     return min(s, 100)
 
 
+def risk_cap_for(incident, corr=None):
+    """Keep a medium-confidence timeline in the High triage tier.
+
+    A medium chain is actionable but is not a confirmed compromise and must not
+    become Critical merely through inherited context or ML adjustment.
+    """
+    if (
+        incident == "Suspected Web Compromise"
+        and isinstance(corr, dict)
+        and corr.get("confidence") == "medium"
+    ):
+        return 79
+    return 100
+
+
 def score_envelope(ev, incident, corr, whitelist):
     """Scoring cho envelope da chuan hoa, cong diem tuong quan neu co."""
     s = BASE.get(incident, 10)
@@ -72,7 +88,7 @@ def score_envelope(ev, incident, corr, whitelist):
     ):
         s = max(s, BASE["Possible Server Compromise"])
         s += 10
-    return min(s, 100)
+    return min(s, risk_cap_for(incident, corr))
 
 
 def mitre_for_result(incident, corr=None):
@@ -80,8 +96,9 @@ def mitre_for_result(incident, corr=None):
 
     A matching Network/Web IP is evidence linkage, not identity attribution.
     Network discovery is included only for the high-confidence full chain. Web
-    shell T1505.003 is included only when a selected evidence incident is a
-    suspicious web file.
+    A suspicious filename alone does not provide enough evidence to attach a
+    Web Shell technique; VM3 therefore returns only techniques backed by the
+    selected alert semantics.
     """
     if not corr:
         return MITRE.get(incident, MITRE["Unknown"])

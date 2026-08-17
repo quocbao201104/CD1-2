@@ -52,7 +52,7 @@ TEMPLATES = {
         "CẢNH BÁO NGHIÊM TRỌNG: trên {agent} đã quan sát chuỗi evidence network → web → os trong thời gian ngắn. "
         "Có dấu hiệu dò quét, thử khai thác Web và sau đó xuất hiện thay đổi bất thường ở tầng hệ điều hành. "
         "Điểm rủi ro {score}/100. Khuyến nghị: kiểm tra Suricata, Nginx access log, FIM/auditd và web root; "
-        "chặn IP {ip} nếu nằm ngoài danh sách cho phép và thu thập log phục vụ điều tra.",
+        "đối chiếu IP Network/Web, chỉ chặn sau khi xác minh và thu thập log phục vụ điều tra.",
     "Unknown":
         "Sự kiện chưa được phân loại trên {agent}, IP {ip}, điểm rủi ro {score}/100. Quản trị viên cần xem xét thủ công.",
 }

@@ -81,7 +81,7 @@ class GotifyThresholdTests(unittest.TestCase):
         self.assertIn("🚨 CẢNH BÁO BẢO MẬT", text)
         self.assertIn("Mức độ: Nghiêm trọng (Critical)", text)
         self.assertIn("Điểm theo luật: 90/100", text)
-        self.assertIn("ML bổ sung: +10", text)
+        self.assertIn("ML đề xuất: +10; áp dụng vào điểm: +10", text)
         self.assertIn("Bất thường: Có", text)
         self.assertIn("Nhãn phân tích: Possible Server Compromise", text)
         self.assertIn("Nguồn bằng chứng: Mạng → Web → Hệ điều hành", text)
@@ -141,6 +141,39 @@ class GotifyThresholdTests(unittest.TestCase):
         self.assertIn("Có quan sát network precursor", text)
         self.assertIn("không quy kết các sự kiện cho cùng tác nhân", text)
         self.assertNotIn("Không quan sát network precursor", text)
+
+    def test_correlation_output_separates_target_host_event_ip_and_missing_ip_semantics(self):
+        result = result_with_risk(79)
+        result.update(
+            {
+                "server_ip": "192.168.245.10",
+                "srcip": None,
+                "incident_type": "Suspected Web Compromise",
+                "correlated": True,
+                "correlation": {
+                    **correlation(
+                        sources=["network", "web", "os"],
+                        confidence="medium",
+                        ip_match="unknown",
+                        ips={"network": "192.168.245.157", "web": None, "os": None},
+                        has_network=True,
+                    ),
+                    "precursor_incidents": ["Network Port Scan", "Web Traversal Attempt"],
+                    "current_incident": "Suspicious Web File",
+                },
+                "ml": {**result["ml"], "risk_delta": 10, "risk_delta_applied": 9},
+            }
+        )
+
+        text = _format(result)
+
+        self.assertIn("IP máy chủ: 192.168.245.10", text)
+        self.assertIn("IP nguồn alert hiện tại: Chưa ghi nhận", text)
+        self.assertIn("Mạng=192.168.245.157", text)
+        self.assertIn("Web=Chưa ghi nhận IP nguồn", text)
+        self.assertIn("OS/FIM=Không áp dụng", text)
+        self.assertIn("Sự kiện đã quan sát: Network Port Scan → Web Traversal Attempt → Suspicious Web File", text)
+        self.assertIn("ML đề xuất: +10; áp dụng vào điểm: +9", text)
 
     @patch("app.notifier.requests.post")
     def test_low_risk_is_recorded_but_not_sent_to_gotify(self, post):

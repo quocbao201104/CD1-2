@@ -151,12 +151,17 @@ sources
 has_network_precursor
 src_ip_match
 observed_ips
+server_ip
 precursor_incidents
 time_delta_web_to_os
 time_delta_network_to_os
 ```
 
 > `src_ip_match=true` chỉ tăng bằng chứng liên kết Network/Web, **không chứng minh danh tính hoặc quy kết tuyệt đối cùng một tác nhân**.
+
+`server_ip` là IP của máy chủ/agent được giám sát. `srcip` là IP nguồn của
+**alert hiện tại**; nó không bị ghi đè bằng IP của precursor trong correlation.
+`observed_ips` chỉ là bảng bằng chứng theo từng lớp Network/Web/OS để điều tra.
 
 ---
 
@@ -172,9 +177,9 @@ Risk scoring là logic deterministic dùng để ưu tiên điều tra, **không
 - evidence correlation;
 - `risk_delta` từ ML.
 
-Correlation `medium` không tự động ép điểm lên 100. Nhánh nâng điểm mạnh chỉ áp dụng cho `Possible Server Compromise` có confidence `high`.
+Correlation `medium` không tự động ép điểm lên 100. Nhánh nâng điểm mạnh chỉ áp dụng cho `Possible Server Compromise` có confidence `high`. `Suspected Web Compromise` confidence `medium` được chặn ở `79` (High), nên không bị hiển thị như một compromise Critical.
 
-MITRE ATT&CK được ánh xạ theo evidence thực tế. Hệ thống không gán một kỹ thuật chỉ vì correlation tồn tại; ví dụ kỹ thuật Web Shell chỉ được đưa vào khi evidence thực tế tương ứng với `Suspicious Web File`.
+MITRE ATT&CK được ánh xạ theo evidence thực tế. Hệ thống không gán một kỹ thuật chỉ vì correlation tồn tại; tên tệp nghi vấn hoặc FIM thay đổi web root đơn lẻ không tự khẳng định Web Shell/Defacement tại VM3 khi chưa có bằng chứng nội dung hoặc thực thi.
 
 ---
 
@@ -188,7 +193,7 @@ VM3 sử dụng `IsolationForest` của scikit-learn để bổ sung tín hiệu
 - Không gọi LLM hoặc API AI bên ngoài.
 - ML không tự tạo nhãn compromise.
 - ML chỉ sinh `anomaly_score`, `is_anomaly` và `risk_delta`.
-- `risk_delta` bị giới hạn để không lấn át rule/correlation deterministic.
+- `risk_delta` bị giới hạn để không lấn át rule/correlation deterministic; notifier phân biệt rõ điểm ML đề xuất và điểm ML thực sự áp dụng sau policy cap.
 - Nếu model artifact không sử dụng được, hệ thống có cơ chế fallback và thể hiện nguồn model để quản trị viên nhận biết.
 
 ### Bộ đặc trưng hiện hành
@@ -673,7 +678,7 @@ Nhãn phân tích
 Mức độ
 Tổng điểm
 Điểm theo luật
-ML bổ sung
+ML đề xuất / áp dụng vào điểm
 MITRE ATT&CK
 Tương quan sự kiện
 Phân tích
@@ -711,6 +716,7 @@ Các giới hạn chính:
 - Web-compromise correlation hiện tập trung vào pattern Web -> OS và Network -> Web -> OS;
 - ngưỡng Wazuh integration có thể làm mất một số precursor;
 - baseline ML còn nhỏ;
+- baseline hiện chủ yếu là event đơn lẻ lành tính, nên anomaly score của chuỗi correlation có tính tham khảo và cần bổ sung mẫu benign theo ngữ cảnh trước khi diễn giải như một xác suất tấn công;
 - tập đánh giá ML không đại diện production;
 - chưa benchmark đầy đủ latency, throughput, concurrency và CPU/RAM;
 - webhook chưa được harden theo chuẩn production bằng HMAC/mTLS/RBAC/rate limiting;

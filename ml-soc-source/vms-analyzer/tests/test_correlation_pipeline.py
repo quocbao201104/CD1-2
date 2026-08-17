@@ -43,7 +43,7 @@ class CorrelationPipelineTests(unittest.TestCase):
         self.assertEqual("Suspected Web Compromise", result["incident_type"])
         self.assertEqual("medium", result["correlation"]["confidence"])
         self.assertEqual("unknown", result["correlation"]["src_ip_match"])
-        self.assertEqual(90, result["base_risk_score"])
+        self.assertEqual(70, result["base_risk_score"])
         self.assertNotEqual(100, result["base_risk_score"])
         self.assertNotIn("T1505.003", result["mitre"])
 
@@ -62,7 +62,7 @@ class CorrelationPipelineTests(unittest.TestCase):
         self.assertEqual("true", result["correlation"]["src_ip_match"])
         self.assertEqual(100, result["base_risk_score"])
         self.assertIn("T1046", result["mitre"])
-        self.assertIn("T1505.003", result["mitre"])
+        self.assertNotIn("T1505.003", result["mitre"])
 
     @patch("app.main.policy_engine", return_value=[])
     @patch("app.main.notify")
@@ -77,8 +77,30 @@ class CorrelationPipelineTests(unittest.TestCase):
         self.assertEqual("Suspected Web Compromise", result["incident_type"])
         self.assertEqual("medium", result["correlation"]["confidence"])
         self.assertEqual("false", result["correlation"]["src_ip_match"])
-        self.assertEqual(90, result["base_risk_score"])
+        self.assertEqual(70, result["base_risk_score"])
         self.assertNotIn("T1046", result["mitre"])
+
+    @patch("app.main.policy_engine", return_value=[])
+    @patch("app.main.notify")
+    @patch(
+        "app.main.evaluate_anomaly",
+        return_value={**ML_RESULT, "risk_delta": 10},
+    )
+    def test_medium_chain_keeps_event_ip_empty_and_caps_ml_adjusted_score(
+        self, _ml, _notify, _policy
+    ):
+        _pipeline(event("network", "Suricata: ET SCAN Nmap", "192.168.245.157"))
+        _pipeline(event("web", "WEB: Directory traversal attempt", None))
+        result = _pipeline(event("os", "SOC: /var/www/html/shell.php modified"))
+
+        self.assertEqual("Suspected Web Compromise", result["incident_type"])
+        self.assertEqual("medium", result["correlation"]["confidence"])
+        self.assertIsNone(result["srcip"])
+        self.assertEqual("192.168.245.157", result["correlation"]["observed_ips"]["network"])
+        self.assertIsNone(result["correlation"]["observed_ips"]["web"])
+        self.assertEqual(70, result["base_risk_score"])
+        self.assertEqual(9, result["ml"]["risk_delta_applied"])
+        self.assertEqual(79, result["risk_score"])
 
 
 if __name__ == "__main__":

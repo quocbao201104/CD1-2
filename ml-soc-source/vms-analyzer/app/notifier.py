@@ -31,16 +31,21 @@ def _correlation_text(result: dict) -> str:
         correlation.get("src_ip_match"), "Không đủ dữ liệu"
     )
     observed_ips = correlation.get("observed_ips") or {}
-    ip_text = "; ".join(
-        f"{label}={observed_ips.get(key) or 'Không có'}"
-        for key, label in (("network", "Network"), ("web", "Web"), ("os", "OS"))
-    )
+    network_ip = observed_ips.get("network") or "Chưa ghi nhận IP nguồn"
+    web_ip = observed_ips.get("web") or "Chưa ghi nhận IP nguồn"
+    os_ip = observed_ips.get("os") or "Không áp dụng (event FIM/OS không có IP client)"
+    ip_text = f"Mạng={network_ip}; Web={web_ip}; OS/FIM={os_ip}"
+    evidence = list(correlation.get("precursor_incidents") or [])
+    if correlation.get("current_incident"):
+        evidence.append(correlation["current_incident"])
     lines = [
         f"Nguồn bằng chứng: {source_text or 'Không xác định'}",
         f"Độ tin cậy: {confidence}",
         f"Liên kết IP nguồn (Network/Web): {ip_match}",
         f"IP quan sát được: {ip_text}",
     ]
+    if evidence:
+        lines.append(f"Sự kiện đã quan sát: {' → '.join(evidence)}")
 
     if (
         result.get("incident_type") == "Possible Server Compromise"
@@ -83,6 +88,7 @@ def _format(result: dict) -> str:
     anomaly_value = ml.get("is_anomaly")
     anomaly_text = "Có" if anomaly_value is True else "Không" if anomaly_value is False else "Chưa xác định"
     risk_delta = int(ml.get("risk_delta") or 0)
+    applied_ml_delta = int(ml.get("risk_delta_applied", risk_delta) or 0)
     correlation_text = _correlation_text(result)
 
     return (
@@ -91,11 +97,13 @@ def _format(result: dict) -> str:
         f"Mức độ: {severity_vi} ({severity})\n\n"
         f"🖥️ ĐỐI TƯỢNG\n"
         f"Máy chủ: {result.get('agent') or 'Không xác định'}\n"
-        f"IP nguồn: {result.get('srcip') or 'Không xác định'}\n\n"
+        f"IP máy chủ: {result.get('server_ip') or 'Chưa ghi nhận'}\n\n"
+        f"📍 NGUỒN CỦA ALERT HIỆN TẠI\n"
+        f"IP nguồn alert hiện tại: {result.get('srcip') or 'Chưa ghi nhận'}\n\n"
         f"📊 ĐÁNH GIÁ RỦI RO\n"
         f"Tổng điểm: {result.get('risk_score', 0)}/100\n"
         f"Điểm theo luật: {result.get('base_risk_score', 0)}/100\n"
-        f"ML bổ sung: +{risk_delta}\n"
+        f"ML đề xuất: +{risk_delta}; áp dụng vào điểm: +{applied_ml_delta}\n"
         f"MITRE ATT&CK: {result.get('mitre') or 'Không xác định'}\n\n"
         f"🧠 HỌC MÁY CỤC BỘ\n"
         f"Mô hình: {ml.get('model') or 'Không xác định'}\n"

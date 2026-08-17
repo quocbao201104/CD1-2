@@ -353,13 +353,16 @@ sources               = web, os
 has_network_precursor = false
 confidence            = medium
 src_ip_match          = unknown
+observed_ips           = Web=<IP client hoặc chưa ghi nhận>, OS/FIM=<không áp dụng>
+IP nguồn alert hiện tại = <không bị mượn từ precursor>
 actions               = proposed / DRY_RUN
 ```
 
 **Lồng tiếng ngắn:** “Khi Web được quan sát trước thay đổi OS/FIM trên cùng máy
 chủ và trong cửa sổ 600 giây, Analyzer hình thành Suspected Web Compromise với
 độ tin cậy trung bình. Không có network precursor nên hệ thống không nâng kết
-quả lên mức cao.”
+quả lên mức cao; policy giữ mức này tối đa High, không diễn giải như compromise
+đã xác nhận.”
 
 Không phát biểu rằng máy chủ đã chắc chắn bị xâm nhập. Đây là nhãn phân tích hỗ
 trợ ưu tiên điều tra.
@@ -413,6 +416,7 @@ has_network_precursor = true
 confidence            = high
 src_ip_match          = true
 risk                  = Critical / high score
+observed_ips           = Network=<IP Kali>, Web=<IP Kali>, OS/FIM=<không áp dụng>
 actions               = proposed / DRY_RUN
 ```
 

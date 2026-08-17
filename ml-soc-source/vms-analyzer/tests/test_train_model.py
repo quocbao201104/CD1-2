@@ -6,10 +6,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.ml_anomaly import evaluate_anomaly, reset_model_cache
+from app.ml_anomaly import evaluate_anomaly, feature_vector, reset_model_cache
 
 
 class TrainModelCommandTests(unittest.TestCase):
+    def test_suspected_web_compromise_has_explicit_ml_weight(self):
+        vector = feature_vector(
+            {"source": "os", "related_ip": None},
+            "Suspected Web Compromise",
+            70,
+            {"correlated": True, "has_network_precursor": True},
+        )
+        self.assertEqual(7, vector[4])
+
     def test_training_command_writes_model_and_metadata(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             model_path = Path(temp_dir) / "isolation_forest.joblib"

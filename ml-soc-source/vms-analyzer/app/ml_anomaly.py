@@ -29,6 +29,7 @@ INCIDENT_WEIGHT = {
     "Web Traversal Attempt": 6,
     "Web Root Modified": 7,
     "Suspicious Web File": 8,
+    "Suspected Web Compromise": 7,
     "Account File Modified": 6,
     "SSH Key Backdoor": 7,
     "Privilege Escalation": 8,
